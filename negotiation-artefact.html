@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ad Deal Negotiation — Agent Run</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: #F7F6F3;
+    color: #1a1a1a;
+    line-height: 1.7;
+    padding: 48px 24px 96px;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .header {
+    border-bottom: 1.5px solid #1a1a1a;
+    padding-bottom: 24px;
+    margin-bottom: 48px;
+  }
+
+  .eyebrow {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: normal;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: #555;
+    max-width: 600px;
+  }
+
+  /* Contracts */
+  .contracts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 56px;
+  }
+
+  .contract {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 24px;
+  }
+
+  .contract-label {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .contract-label.seller { color: #2563a8; }
+  .contract-label.buyer { color: #7c3aab; }
+
+  .contract-name {
+    font-size: 17px;
+    font-weight: bold;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .contract-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 5px 0;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 16px;
+  }
+
+  .contract-row:last-child { border-bottom: none; }
+
+  .contract-key {
+    color: #888;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  .contract-val {
+    text-align: right;
+    font-size: 13px;
+  }
+
+  /* Section heading */
+  .section-heading {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 24px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  /* Rounds */
+  .rounds { margin-bottom: 56px; }
+
+  .round {
+    margin-bottom: 40px;
+  }
+
+  .round-label {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 16px;
+  }
+
+  .moves {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .move {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 18px 20px;
+    position: relative;
+    padding-left: 56px;
+  }
+
+  .move-badge {
+    position: absolute;
+    left: 16px;
+    top: 18px;
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: bold;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    line-height: 1;
+  }
+
+  .move-badge.seller { color: #2563a8; }
+  .move-badge.buyer { color: #7c3aab; }
+
+  .move-action {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .move-action.make_offer { color: #1a6b3c; }
+  .move-action.flag_mismatch { color: #b45309; }
+  .move-action.accept_deal { color: #1a6b3c; }
+
+  .move-details {
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 8px;
+  }
+
+  .move-detail-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 3px;
+    font-size: 13px;
+  }
+
+  .detail-key {
+    color: #999;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    min-width: 100px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+
+  .move-reasoning {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f0;
+    font-size: 13px;
+    color: #555;
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  /* Dealbreaker flag */
+  .dealbreaker-flag {
+    display: inline-block;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 2px;
+    margin-top: 6px;
+  }
+
+  /* Human sign-off */
+  .signoff {
+    background: #1a1a1a;
+    color: #f5f5f5;
+    border-radius: 4px;
+    padding: 36px 40px;
+    margin-bottom: 56px;
+  }
+
+  .signoff-eyebrow {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 16px;
+  }
+
+  .signoff h2 {
+    font-size: 22px;
+    font-weight: normal;
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+  }
+
+  .signoff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 32px;
+    margin-bottom: 24px;
+  }
+
+  .signoff-row {
+    font-size: 13px;
+    border-bottom: 1px solid #333;
+    padding: 6px 0;
+  }
+
+  .signoff-key {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 2px;
+  }
+
+  .signoff-val {
+    color: #f5f5f5;
+  }
+
+  .signoff-summary {
+    font-size: 14px;
+    color: #bbb;
+    line-height: 1.7;
+    padding-top: 16px;
+    border-top: 1px solid #333;
+    margin-bottom: 24px;
+  }
+
+  .signoff-financials {
+    display: flex;
+    gap: 40px;
+  }
+
+  .signoff-stat-label {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 4px;
+  }
+
+  .signoff-stat-value {
+    font-size: 24px;
+    letter-spacing: -0.02em;
+  }
+
+  .approved-stamp {
+    display: inline-block;
+    border: 2px solid #4ade80;
+    color: #4ade80;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 2px;
+    margin-top: 24px;
+  }
+
+  /* Footer note */
+  .footer-note {
+    font-size: 13px;
+    color: #999;
+    font-style: italic;
+    padding-top: 24px;
+    border-top: 1px solid #ddd;
+  }
+
+  @media (max-width: 600px) {
+    .contracts { grid-template-columns: 1fr; }
+    .signoff-grid { grid-template-columns: 1fr; }
+    .signoff-financials { flex-direction: column; gap: 16px; }
+    .move { padding-left: 20px; }
+    .move-badge { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="eyebrow">Agent run — Ad deal negotiation</div>
+    <h1>Immediate Media × LexCorp Legal Software</h1>
+    <p class="subtitle">A two-agent programmatic advertising negotiation. Each agent operated from a defined data contract. Three rounds. One deal. Human sign-off required before activation.</p>
+  </div>
+
+  <!-- Contracts -->
+  <div class="section-heading">Data contracts</div>
+  <div class="contracts">
+    <div class="contract">
+      <div class="contract-label seller">Seller</div>
+      <div class="contract-name">Immediate Media</div>
+      <div class="contract-row"><span class="contract-key">Floor CPM</span><span class="contract-val">$8.50</span></div>
+      <div class="contract-row"><span class="contract-key">Segments</span><span class="contract-val">Legal professionals, financial decision makers, C-suite</span></div>
+      <div class="contract-row"><span class="contract-key">Exclusions</span><span class="contract-val">Gambling, alcohol, payday loans</span></div>
+      <div class="contract-row"><span class="contract-key">Placement</span><span class="contract-val">Above the fold only, no auto-play video</span></div>
+      <div class="contract-row"><span class="contract-key">Frequency cap</span><span class="contract-val">3 per user</span></div>
+      <div class="contract-row"><span class="contract-key">Viewability</span><span class="contract-val">70% guaranteed</span></div>
+    </div>
+    <div class="contract">
+      <div class="contract-label buyer">Buyer</div>
+      <div class="contract-name">LexCorp Legal Software</div>
+      <div class="contract-row"><span class="contract-key">Max CPM</span><span class="contract-val">$11.00</span></div>
+      <div class="contract-row"><span class="contract-key">Target segments</span><span class="contract-val">Legal professionals, financial decision makers</span></div>
+      <div class="contract-row"><span class="contract-key">Exclusions</span><span class="contract-val">Gambling, adult content</span></div>
+      <div class="contract-row"><span class="contract-key">Placement</span><span class="contract-val">Above the fold preferred</span></div>
+      <div class="contract-row"><span class="contract-key">Frequency cap</span><span class="contract-val">4 per user</span></div>
+      <div class="contract-row"><span class="contract-key">Viewability required</span><span class="contract-val">65% minimum</span></div>
+      <div class="contract-row"><span class="contract-key">Impression goal</span><span class="contract-val">500,000</span></div>
+    </div>
+  </div>
+
+  <!-- Rounds -->
+  <div class="section-heading">Negotiation</div>
+  <div class="rounds">
+
+    <!-- Round 1 -->
+    <div class="round">
+      <div class="round-label">Round 1</div>
+      <div class="moves">
+
+        <div class="move">
+          <div class="move-badge seller">Seller</div>
+          <div class="move-action make_offer">make_offer</div>
+          <div class="move-detail-row"><span class="detail-key">Proposed CPM</span><span>$10.50</span></div>
+          <div class="move-detail-row"><span class="detail-key">Segments</span><span>Legal professionals, financial decision makers</span></div>
+          <div class="move-detail-row"><span class="detail-key">Placement</span><span>Above the fold only</span></div>
+          <div class="move-detail-row"><span class="detail-key">Conditions</span><span>70% viewability guaranteed, frequency cap 3/user, exclusions: gambling, alcohol, payday loans, no auto-play video</span></div>
+          <div class="move-reasoning">"LexCorp is an excellent fit for our legal professionals and financial decision makers segments. We're offering above-the-fold placement with 70% guaranteed viewability, which exceeds your 65% requirement. We can accommodate your frequency cap at 3 impressions per user, which actually improves campaign efficiency. At 500K impressions this is a strong volume commitment."</div>
+        </div>
+
+        <div class="move">
+          <div class="move-badge buyer">Buyer</div>
+          <div class="move-action flag_mismatch">flag_mismatch</div>
+          <div class="move-detail-row"><span class="detail-key">Constraint</span><span>Brand adjacency exclusions</span></div>
+          <div class="move-detail-row"><span class="detail-key">Detail</span><span>Our contract requires explicit exclusion of "adult content" in addition to gambling. The seller's offer does not include this. Must be added.</span></div>
+          <div class="dealbreaker-flag">Dealbreaker</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Round 2 -->
+    <div class="round">
+      <div class="round-label">Round 2</div>
+      <div class="moves">
+
+        <div class="move">
+          <div class="move-badge seller">Seller</div>
+          <div class="move-action make_offer">make_offer</div>
+          <div class="move-detail-row"><span class="detail-key">Proposed CPM</span><span>$10.50</span></div>
+          <div class="move-detail-row"><span class="detail-key">Segments</span><span>Legal professionals, financial decision makers</span></div>
+          <div class="move-detail-row"><span class="detail-key">Placement</span><span>Above the fold only</span></div>
+          <div class="move-detail-row"><span class="detail-key">Conditions</span><span>Exclusions updated: gambling, alcohol, payday loans, adult content. All other terms unchanged.</span></div>
+          <div class="move-reasoning">"Happy to add adult content to the brand safety exclusion list — this is fully aligned with Immediate Media's editorial standards. CPM remains at $10.50 reflecting the premium audience segments and above-the-fold placement with 70% guaranteed viewability."</div>
+        </div>
+
+        <div class="move">
+          <div class="move-badge buyer">Buyer</div>
+          <div class="move-action make_offer">make_offer</div>
+          <div class="move-detail-row"><span class="detail-key">Proposed CPM</span><span>$9.75</span></div>
+          <div class="move-detail-row"><span class="detail-key">Segments</span><span>Legal professionals, financial decision makers</span></div>
+          <div class="move-detail-row"><span class="detail-key">Placement</span><span>Above the fold only</span></div>
+          <div class="move-detail-row"><span class="detail-key">Conditions</span><span>Brand safety terms accepted as updated. Frequency cap of 3 accepted.</span></div>
+          <div class="move-reasoning">"We appreciate the updated brand safety terms. However, the tighter frequency cap of 3 vs our standard 4 limits reach per user and makes delivery harder against a 500K impression goal — that constraint should be reflected in price. We're proposing $9.75 CPM. All other terms accepted as-is."</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Round 3 -->
+    <div class="round">
+      <div class="round-label">Round 3</div>
+      <div class="moves">
+
+        <div class="move">
+          <div class="move-badge seller">Seller</div>
+          <div class="move-action make_offer">make_offer</div>
+          <div class="move-detail-row"><span class="detail-key">Proposed CPM</span><span>$10.00</span></div>
+          <div class="move-detail-row"><span class="detail-key">Segments</span><span>Legal professionals, financial decision makers</span></div>
+          <div class="move-detail-row"><span class="detail-key">Placement</span><span>Above the fold only</span></div>
+          <div class="move-detail-row"><span class="detail-key">Conditions</span><span>All prior terms. Flight dates TBD upon sign-off.</span></div>
+          <div class="move-reasoning">"A cap of 3 actually benefits campaign quality by reducing wasted impressions and improving effective reach across our high-value audiences. We're moving to $10.00 as a gesture of partnership — that's a $250 saving on the 500K impression commitment. You get premium ATF placement, 70% guaranteed viewability, tight brand safety, and two of our most in-demand segments. Let's close at $10.00."</div>
+        </div>
+
+        <div class="move">
+          <div class="move-badge buyer">Buyer</div>
+          <div class="move-action accept_deal">accept_deal</div>
+          <div class="move-detail-row"><span class="detail-key">Final CPM</span><span>$10.00</span></div>
+          <div class="move-detail-row"><span class="detail-key">Segments</span><span>Legal professionals, financial decision makers</span></div>
+          <div class="move-detail-row"><span class="detail-key">Placement</span><span>Above the fold only</span></div>
+          <div class="move-detail-row"><span class="detail-key">Conditions</span><span>70% viewability, frequency cap 3/user, full brand safety exclusions including adult content, no auto-play video</span></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Human sign-off -->
+  <div class="signoff">
+    <div class="signoff-eyebrow">System paused — human sign-off required</div>
+    <h2>Review deal terms before activation</h2>
+
+    <div class="signoff-grid">
+      <div class="signoff-row">
+        <div class="signoff-key">Advertiser</div>
+        <div class="signoff-val">LexCorp Legal Software</div>
+      </div>
+      <div class="signoff-row">
+        <div class="signoff-key">Publisher</div>
+        <div class="signoff-val">Immediate Media</div>
+      </div>
+      <div class="signoff-row">
+        <div class="signoff-key">CPM</div>
+        <div class="signoff-val">$10.00</div>
+      </div>
+      <div class="signoff-row">
+        <div class="signoff-key">Placement</div>
+        <div class="signoff-val">Above the fold only</div>
+      </div>
+      <div class="signoff-row">
+        <div class="signoff-key">Segments</div>
+        <div class="signoff-val">Legal professionals, financial decision makers</div>
+      </div>
+      <div class="signoff-row">
+        <div class="signoff-key">Viewability</div>
+        <div class="signoff-val">70% guaranteed (req: 65%)</div>
+      </div>
+      <div class="signoff-row">
+        <div class="signoff-key">Frequency cap</div>
+        <div class="signoff-val">3 per user</div>
+      </div>
+      <div class="signoff-row">
+        <div class="signoff-key">Exclusions</div>
+        <div class="signoff-val">Gambling, alcohol, payday loans, adult content</div>
+      </div>
+    </div>
+
+    <div class="signoff-summary">
+      LexCorp Legal Software programmatic deal with Immediate Media. $10.00 CPM on 500K impressions. Above-the-fold placement targeting legal professionals and financial decision makers. 70% guaranteed viewability exceeds the 65% requirement. Frequency cap at 3 per user — tighter than the buyer's preferred 4, accepted as commercially reasonable. Full brand safety exclusions including adult content confirmed. Flight dates to be confirmed upon sign-off. Deal is within all hard constraints and commercially favourable for both parties.
+    </div>
+
+    <div class="signoff-financials">
+      <div>
+        <div class="signoff-stat-label">Impression goal</div>
+        <div class="signoff-stat-value">500,000</div>
+      </div>
+      <div>
+        <div class="signoff-stat-label">Estimated spend</div>
+        <div class="signoff-stat-value">$5,000.00</div>
+      </div>
+    </div>
+
+    <div class="approved-stamp">Approved by human reviewer</div>
+  </div>
+
+  <div class="footer-note">
+    Generated by a two-agent negotiation system built in Python using the Anthropic Claude API. Each agent operated autonomously within its data contract constraints. No deal terms were hardcoded — the outcome emerged from the negotiation. Source: github.com/zub-sero/ad-negotiation-agent
+  </div>
+
+</div>
+</body>
+</html>
